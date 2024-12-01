@@ -1,0 +1,102 @@
+Methods and Results: Using KNN in R to Analyze the Relationship Between Experience and Played Hours
+# Loading the Data
+The dataset was loaded into R using the readr package, ensuring the data was imported in a clean and structured format.
+
+
+library(readr)
+
+library(dplyr)
+
+library(ggplot2)
+
+library(caret)
+
+library(class)
+
+file_path <- "path/to/players.csv"
+players_data <- read_csv(file_path)
+
+head(players_data)
+
+# Wrangling and Cleaning the Data
+
+players_data_cleaned <- players_data %>%
+  filter(!is.na(played_hours), !is.na(experience))
+
+ players_data_cleaned$experience <- as.factor(players_data_cleaned$experience)
+ 
+ players_data_cleaned$scaled_hours <- scale(players_data_cleaned$played_hours)
+
+ # Exploratory Data Analysis
+
+ summary_stats <- players_data_cleaned %>%
+  group_by(experience) %>%
+  summarize(
+    mean_hours = mean(played_hours),
+    median_hours = median(played_hours),
+    max_hours = max(played_hours)
+  )
+print(summary_stats)
+
+ggplot(players_data_cleaned, aes(x = experience, y = played_hours)) +
+  geom_boxplot(fill = "skyblue") +
+  labs(
+    title = "Figure 1: Played Hours by Experience Level",
+    x = "Experience Level",
+    y = "Played Hours") +
+  theme_minimal()
+
+# Performing KNN Analysis
+
+set.seed(42)
+train_index <- createDataPartition(players_data_cleaned$experience, p = 0.7, list = FALSE)
+train_data <- players_data_cleaned[train_index, ]
+test_data <- players_data_cleaned[-train_index, ]
+
+train_x <- as.matrix(train_data$scaled_hours)
+train_y <- train_data$experience
+test_x <- as.matrix(test_data$scaled_hours)
+test_y <- test_data$experience
+
+knn_pred <- knn(train = train_x, test = test_x, cl = train_y, k = 5)
+
+conf_matrix <- confusionMatrix(knn_pred, test_y)
+print(conf_matrix)
+
+# Visualizing the Results
+
+library(cowplot)
+
+conf_df <- as.data.frame(as.table(conf_matrix$table))
+
+ggplot(conf_df, aes(Var1, Var2, fill = Freq)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "white", high = "blue") +
+  labs(
+    title = "Figure 2: Confusion Matrix for KNN Model",
+    x = "Predicted Experience Level",
+    y = "True Experience Level"
+  ) +
+  theme_minimal()
+  
+
+
+# Methods and Plan
+
+Using KNN models:
+
+Summarization
+
+According to our analysis using the KNN model, there are some noticeable patterns in player contributions. Experienced and amateur players are most likely to contribute a large amount of data, which seems to be consistent with their higher gaming time and engagement. On the other hand, the representation of professional players in the dataset is unexpectedly insufficient. The lack of such representation makes it more difficult for the model to accurately classify them, which is reflected in the relatively low accuracy of the model at 29%. The overlapping features between different player types also make it difficult for KNN models to make clear distinctions between experience levels.
+
+discuss whether this is what you expected to find?
+
+These results are generally as expected. Those Senior players may be the most loyal and experienced, contributing a larger share of data, which is not surprising. The Amateur players may make up a larger proportion of the player community and are well represented as we expected. However, we could easily discover that the lack of data on professional players is surprising. You would think that high skilled players who frequently participate deeply in the game  could contribute a lot of data. The results clearly indicate that this is not the case, which raises questions about whether they are facing obstacles such as time constraints, or whether they are simply not interested in providing data.
+
+Impacts that findings may have
+
+These findings explain some practical steps we can take to increase player engagement and increase the amount of time players spend playing. From the table, we can see that Veteran and Amateur players dominate, so we should focus on them first. Providing incentives such as in-game rewards, exclusive features or special events can also keep them engaged and increase the number of people willing to participate. On the other hand, we are missing out on finding more professional players in this process. In order to attract them, we may need to find their motivations, and using things that can gain public recognition for their skills may be effective, such as leaderboards, tournaments, etc. It is also worth considering what exactly may be holding them back and finding solutions accordingly, whether it is a lack of time, interest or other obstacles. Finally, improving the overall balance of the dataset by recruiting more professional players and incorporating other data points such as demographics or gaming preferences will not only make future predictions more accurate, but also give us a better understanding of the entire player population.
+
+Future questions that may lead to
+
+From the analysis,  there could be several questions that are worthy for us to explore. For example, is it possible that we use those same strategies to attract other types of players and what makes a great number of engagement for Veteran and Amateur players? On the flip side, why aren’t Pro players contributing as much? Is it because they don’t have time, aren’t interested, or don’t feel like they’re getting enough out of it?It is neccessary to figure them out on board. There’s also the question of retention—do Veteran players stick around longer, and if so, how can we use that insight to improve how we recruit and keep players engaged over time? Lastly, we should suppose suppose more data is needed for . Things like player behaviors, preferences, or even how they interact with the community could help make models like KNN more accurate and give us a better understanding of what drives engagement.
